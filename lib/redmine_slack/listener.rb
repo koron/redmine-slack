@@ -13,7 +13,7 @@ class SlackListener < Redmine::Hook::Listener
 		msg = "[#{escape issue.project}] #{escape issue.author} created <#{object_url issue}|#{escape issue}>#{mentions issue.description}"
 
 		attachment = {}
-		attachment[:text] = escape issue.description if issue.description
+		attachment[:text] = escape filter_text(issue.description) if issue.description
 		attachment[:fields] = [{
 			:title => I18n.t("field_status"),
 			:value => escape(issue.status.to_s),
@@ -50,7 +50,7 @@ class SlackListener < Redmine::Hook::Listener
 		msg = "[#{escape issue.project}] #{escape journal.user.to_s} updated <#{object_url issue}|#{escape issue}>#{mentions journal.notes}"
 
 		attachment = {}
-		attachment[:text] = escape journal.notes if journal.notes
+		attachment[:text] = escape filter_text(journal.notes) if journal.notes
 		attachment[:fields] = journal.details.map { |d| detail_to_field d }
 
 		speak msg, channel, attachment, url
@@ -82,7 +82,7 @@ class SlackListener < Redmine::Hook::Listener
 		)
 
 		attachment = {}
-		attachment[:text] = ll(Setting.default_language, :text_status_changed_by_changeset, "<#{revision_url}|#{escape changeset.comments}>")
+		attachment[:text] = filter_text(ll(Setting.default_language, :text_status_changed_by_changeset, "<#{revision_url}|#{escape changeset.comments}>"))
 		attachment[:fields] = journal.details.map { |d| detail_to_field d }
 
 		speak msg, channel, attachment, url
@@ -221,5 +221,9 @@ private
 		# slack usernames may only contain lowercase letters, numbers,
 		# dashes and underscores and must start with a letter or number.
 		text.scan(/@[a-z0-9][a-z0-9_\-]*/).uniq
+	end
+
+	def filter_text(msg)
+		msg.split("\n", 2).first.to_s[0...72]
 	end
 end
